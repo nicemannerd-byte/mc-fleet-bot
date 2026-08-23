@@ -42,7 +42,7 @@ if (isMainThread) {
         String(survival.mode || 'primitive'),
       );
       if (spawned) {
-        console.log(`[survival] ${name} force-joined; survival mission will start on connection`);
+        console.log(`[survival] ${name} force-joined; survival mission will start on spawn`);
       } else {
         console.log(`[survival] failed to spawn ${name}; check bots.maxBots and Minecraft connection settings`);
       }
@@ -64,18 +64,11 @@ if (isMainThread) {
   // Never run the old ambient head tracker for this survival bot.
   proto.startHeadTracking = function (): void { return; };
 
-  // The old bootstrap only defined startSurvivalLoop; nothing called it after
-  // Mineflayer connected. Hook the actual connection lifecycle so the mission
-  // starts immediately after the bot enters the world.
-  const originalConnect = proto.connect;
-  if (typeof originalConnect === 'function') {
-    proto.connect = async function (...args: any[]): Promise<any> {
-      const result = await originalConnect.apply(this, args);
-      this.startSurvivalLoop();
-      return result;
-    };
-  }
-
+  // BotInstance already starts the survival mission from its authenticated
+  // in-world spawn lifecycle. Do not wrap connect() here: connect() creates the
+  // Mineflayer client before the spawn event exists, so starting the mission
+  // after connect() races the login/handshake and can run mission actions with
+  // a null or incomplete world state.
   proto.startSurvivalLoop = function (): void {
     missionBot = this as BotInstance;
     if (!mission) {
@@ -108,7 +101,7 @@ if (isMainThread) {
       const command = msg.type.slice('survival:'.length);
       try {
         if (!mission) {
-          console.log('[survival] mission is not initialized yet; the bot must connect first');
+          console.log('[survival] mission is not initialized yet; the bot must spawn first');
           return;
         }
         switch (command) {
