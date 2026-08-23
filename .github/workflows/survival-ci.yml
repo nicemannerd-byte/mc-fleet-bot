@@ -1,0 +1,31 @@
+name: Survival CI
+
+on:
+  pull_request:
+    paths:
+      - 'src/survival/**'
+      - 'src/bot/**'
+      - 'src/worker/**'
+      - 'src/config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tsconfig.json'
+      - '.github/workflows/survival-ci.yml'
+  push:
+    branches:
+      - main
+      - 'fix/**'
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: npm run build
+      - run: npm test -- --runInBand
