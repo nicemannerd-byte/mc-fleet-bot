@@ -1,0 +1,26 @@
+name: Root build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        run: npm install
+      - name: Compile TypeScript
+        run: npm run build
+      - name: Verify production entrypoint
+        run: test -f dist/start.js && node --check dist/start.js
